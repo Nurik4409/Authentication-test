@@ -4,6 +4,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import User
 from .serializers import RegisterSerializer, VerifyOTPSerializer, LoginSerializer
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from .serializers import LogoutSerializer
+from rest_framework.generics import GenericAPIView
+
+
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -39,3 +46,22 @@ class LoginView(generics.GenericAPIView):
                 "refresh": str(refresh)
             })
         return Response({"detail": "Login yoki parol xato"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+
+class LogoutView(GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        refresh_token = serializer.validated_data["refresh"]
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "Logout muvaffaqiyatli"}, status=status.HTTP_205_RESET_CONTENT)
+        except TokenError:
+            return Response({"detail": "Token noto‘g‘ri yoki eskirgan"}, status=status.HTTP_400_BAD_REQUEST)

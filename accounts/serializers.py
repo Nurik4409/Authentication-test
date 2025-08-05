@@ -1,8 +1,10 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import User
 from .utils import generate_otp, send_otp_email
 
 class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(validators=[validate_password], min_length=8)
     class Meta:
         model = User
         fields = ['email', 'password']
@@ -24,3 +26,12 @@ class VerifyOTPSerializer(serializers.Serializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    def validate(self, attrs):
+        if not attrs.get('refresh'):
+            raise serializers.ValidationError("Refresh token majburiy.")
+        return attrs
